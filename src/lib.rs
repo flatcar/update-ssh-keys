@@ -139,6 +139,7 @@ impl FileLock {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct AuthorizedKeys {
     pub ssh_dir: PathBuf,
