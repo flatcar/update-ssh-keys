@@ -14,8 +14,8 @@ clap = "2.33"
 fs2 = "0.4"
 # Public dependencies, exposed through library API.
 error-chain = { version = "0.12", default-features = false }
-openssh-keys = "0.4"
-users = "0.8"
+openssh-keys = { git = "https://github.com/pothos/openssh-keys", branch = "add-sk-keys" }
+users = "0.9"
 
 [[bin]]
 name = "update-ssh-keys"

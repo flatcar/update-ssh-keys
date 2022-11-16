@@ -42,12 +42,16 @@ test_keys = {
               '888yVOgsJ7HGGDGRMo5ytr2SUJB7QWsLX6Un/Zbu32nXsAqtqagxd6F'
               'Ies98TSekMh/hAv9uK92mEsXSINXOeIMKRedqOyPgk5IEOsFpxAUO4T'
               'xpYToeuM8HRemecxw2eIFHnax+mQqCsi7FgQ== core@valid2',
+    'valid3': 'sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9w'
+              'ZW5zc2guY29tAAAAIEX/dQ0v4127bEo8eeG1EV0ApO2lWbSnN6RWusn'
+              '/NjqIAAAABHNzaDo= demos@siril',
     'bad':    'ssh-bad this-not-a-key core@bad',
 }
 
 fingerprints = {
     'valid1': 'SHA256:yZ+o48h6quk9c+JVgJ/Zq4S5u4LUk6TSpneHKkmM9KY',
     'valid2': 'SHA256:RP5k1AybZ1kollIAnpUavr1v1nfZ0yloKvI46AMDPkM ',
+    'valid3': 'SHA256:U8IKRkIHed6vFMTflwweA3HhIf2DWgZ8EFTm9fgwOUk',
 }
 
 class UpdateSshKeysTestCase(unittest.TestCase):
@@ -107,6 +111,7 @@ class UpdateSshKeysTestCase(unittest.TestCase):
         with open('%s/authorized_keys' % self.ssh_dir, 'w') as fd:
             fd.write('%s\n' % test_keys['valid1'])
             fd.write('%s\n' % test_keys['valid2'])
+            fd.write('%s\n' % test_keys['valid3'])
         proc = self.run_script()
         out, err = proc.communicate()
         self.assertEquals(proc.returncode, 0)
@@ -114,7 +119,7 @@ class UpdateSshKeysTestCase(unittest.TestCase):
         self.assertEquals(err, '')
         self.assertTrue(os.path.exists(
                 '%s/authorized_keys.d/old_authorized_keys' % self.ssh_dir))
-        self.assertHasKeys('valid1', 'valid2')
+        self.assertHasKeys('valid1', 'valid2', 'valid3')
 
     def test_add_one_file(self):
         proc = self.run_script('-a', 'one', self.pub_files['valid1'])

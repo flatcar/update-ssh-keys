@@ -35,10 +35,10 @@ extern crate users;
 pub mod errors {
     error_chain! {
         links {
-            ParseError(::openssh_keys::errors::Error, ::openssh_keys::errors::ErrorKind);
         }
         foreign_links {
             Io(::std::io::Error);
+            ParseError(::openssh_keys::errors::OpenSSHKeyError);
         }
         errors {
             KeysDisabled(name: String) {
@@ -139,6 +139,7 @@ impl FileLock {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct AuthorizedKeys {
     pub ssh_dir: PathBuf,
