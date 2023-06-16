@@ -27,7 +27,7 @@ path = "src/lib.rs"
 doc = true
 
 [profile.release]
-lto = true
+lto = false
 
 [package.metadata.release]
 sign-commit = true
