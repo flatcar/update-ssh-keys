@@ -9,13 +9,12 @@ description = "A tool for managing authorized SSH keys"
 version = "0.4.2-alpha.0"
 
 [dependencies]
-# Private dependencies.
-clap = "2.33"
 fs2 = "0.4"
 # Public dependencies, exposed through library API.
 error-chain = { version = "0.12", default-features = false }
 openssh-keys = { git = "https://github.com/pothos/openssh-keys", branch = "add-sk-keys" }
 users = "0.9"
+clap = { version = "4.4.6", features = ["cargo"] }
 
 [[bin]]
 name = "update-ssh-keys"
