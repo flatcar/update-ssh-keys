@@ -30,7 +30,7 @@
 extern crate error_chain;
 extern crate fs2;
 extern crate openssh_keys;
-extern crate users;
+extern crate uzers;
 
 pub mod errors {
     error_chain! {
@@ -64,8 +64,8 @@ use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
-use users::os::unix::UserExt;
-use users::{switch, User};
+use uzers::os::unix::UserExt;
+use uzers::{switch, User};
 
 const SSH_DIR: &str = ".ssh";
 const AUTHORIZED_KEYS_DIR: &str = "authorized_keys.d";

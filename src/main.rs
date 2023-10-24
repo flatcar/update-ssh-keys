@@ -20,7 +20,7 @@ extern crate clap;
 #[macro_use]
 extern crate error_chain;
 extern crate openssh_keys;
-extern crate users;
+extern crate uzers;
 
 extern crate update_ssh_keys;
 
@@ -29,7 +29,7 @@ use std::fs::File;
 use std::path::PathBuf;
 use update_ssh_keys::errors::*;
 use update_ssh_keys::*;
-use users::get_current_username;
+use uzers::get_current_username;
 
 #[derive(Clone, Debug)]
 struct Config {
@@ -62,7 +62,7 @@ quick_main!(run);
 fn run() -> Result<()> {
     let config = config().chain_err(|| "command line configuration")?;
 
-    let user = users::get_user_by_name(&config.user)
+    let user = uzers::get_user_by_name(&config.user)
         .ok_or_else(|| format!("failed to find user with name '{}'", config.user))?;
 
     let mut aks = AuthorizedKeys::open(user, true, config.ssh_dir.clone()).chain_err(|| {
