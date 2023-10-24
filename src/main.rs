@@ -16,7 +16,6 @@
 //!
 //! this command allows users of container linux to administer ssh keys
 
-#[macro_use]
 extern crate clap;
 #[macro_use]
 extern crate error_chain;
@@ -25,7 +24,7 @@ extern crate users;
 
 extern crate update_ssh_keys;
 
-use clap::{App, Arg};
+use clap::{crate_version, Arg, Command};
 use std::fs::File;
 use std::path::PathBuf;
 use update_ssh_keys::errors::*;
@@ -36,11 +35,11 @@ use users::get_current_username;
 struct Config {
     user: String,
     ssh_dir: Option<PathBuf>,
-    command: Command,
+    command: UssCommand,
 }
 
 #[derive(Clone, Debug)]
-enum Command {
+enum UssCommand {
     Add {
         name: String,
         force: bool,
@@ -74,7 +73,7 @@ fn run() -> Result<()> {
     })?;
 
     match config.command {
-        Command::Add {
+        UssCommand::Add {
             name,
             force,
             replace,
@@ -115,7 +114,7 @@ fn run() -> Result<()> {
                 }
             }
         }
-        Command::Delete { name } => {
+        UssCommand::Delete { name } => {
             println!("Removing {}:", name);
             for key in aks.remove_keys(&name) {
                 if let AuthorizedKeyEntry::Valid { ref key } = key {
@@ -123,7 +122,7 @@ fn run() -> Result<()> {
                 }
             }
         }
-        Command::Disable { name } => {
+        UssCommand::Disable { name } => {
             println!("Disabling {}:", name);
             for key in aks.disable_keys(&name) {
                 if let AuthorizedKeyEntry::Valid { ref key } = key {
@@ -131,7 +130,7 @@ fn run() -> Result<()> {
                 }
             }
         }
-        Command::List => {
+        UssCommand::List => {
             let keys = aks.get_all_keys();
             println!("All keys for {}:", config.user);
             for (name, keyset) in keys {
@@ -143,7 +142,7 @@ fn run() -> Result<()> {
                 }
             }
         }
-        Command::Sync => {}
+        UssCommand::Sync => {}
     }
 
     aks.write()
@@ -155,6 +154,23 @@ fn run() -> Result<()> {
 
     Ok(())
 }
+
+pub const USS_TEMPLATE: &str = "\
+{name}
+{usage-heading} {usage}
+
+{all-args}
+
+{about-with-newline}";
+
+pub const ABOUT_TEXT: &str = "\
+This tool provides a consistent way for different systems to add ssh public
+keys to a given user account, usually the default current user.
+If -a, -A, -d, nor -D are provided then the authorized_keys file is simply
+regenerated using the existing keys.
+
+With the -a option keys may be provided as files on the command line. If no
+files are provided with the -a option the keys will be read from stdin.";
 
 fn config() -> Result<Config> {
     // get the default user by figuring out the current user; if the current user
@@ -169,125 +185,100 @@ fn config() -> Result<Config> {
     });
 
     // setup cli
-    let matches = App::new("update-ssh-keys")
+    let matches = Command::new("update-ssh-keys")
         .version(crate_version!())
-        .help(
-            format!(
-                r#"Usage: update-ssh-keys [-l] [-u user] [-a name file1... | -d name]
-Options:
-    -u USER     Update the given user's authorized_keys file [{0}]
-    -a NAME     Add the given keys, using the given name to identify them.
-    -A NAME     Add the given keys, even if it was disabled with '-D'
-    -n          When adding, don't replace an existing key with the given name.
-    -d NAME     Delete keys identified by the given name.
-    -D NAME     Disable the given set from being added with '-a'
-    -l          List the names and number of keys currently installed.
-    -h          This ;-)
-
-This tool provides a consistent way for different systems to add ssh public
-keys to a given user account, usually the default current user.
-If -a, -A, -d, nor -D are provided then the authorized_keys file is simply
-regenerated using the existing keys.
-
-With the -a option keys may be provided as files on the command line. If no
-files are provided with the -a option the keys will be read from stdin."#,
-                default_user
-            )
-            .as_ref(),
-        )
+        .help_template(USS_TEMPLATE)
+        .about(ABOUT_TEXT)
+        .arg(Arg::new("user").short('u').help(format!(
+            "Update the given user's authorized_keys file. [{}]",
+            default_user
+        )))
         .arg(
-            Arg::with_name("user")
-                .short("u")
-                .help("Update the given user's authorized_keys file.")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("no-replace")
-                .short("n")
+            Arg::new("no-replace")
+                .short('n')
                 .help("When adding, don't replace an existing key with the given name."),
         )
         .arg(
-            Arg::with_name("list")
-                .short("l")
+            Arg::new("list")
+                .short('l')
                 .help("List the names and number of keys currently installed."),
         )
         .arg(
-            Arg::with_name("add")
-                .short("a")
-                .help("Add the given keys, using the given name to identify them.")
-                .takes_value(true),
+            Arg::new("add")
+                .short('a')
+                .help("Add the given keys, using the given name to identify them."),
         )
         .arg(
-            Arg::with_name("add-force")
-                .short("A")
-                .help("Add the given keys, even if it was disabled with '-D'.")
-                .takes_value(true),
+            Arg::new("add-force")
+                .short('A')
+                .help("Add the given keys, even if it was disabled with '-D'."),
         )
         .arg(
-            Arg::with_name("delete")
-                .short("d")
-                .help("Delete keys identified by the given name.")
-                .takes_value(true),
+            Arg::new("delete")
+                .short('d')
+                .help("Delete keys identified by the given name."),
         )
         .arg(
-            Arg::with_name("disable")
-                .short("D")
-                .help("Disable the given set from being added with '-a'.")
-                .takes_value(true),
+            Arg::new("disable")
+                .short('D')
+                .help("Disable the given set from being added with '-a'."),
         )
         .arg(
-            Arg::with_name("ssh_dir")
-                .short("s")
+            Arg::new("ssh_dir")
+                .short('s')
                 .long("ssh-dir")
-                .takes_value(true)
                 .help("location of the ssh configuration directory (defaults to ~/.ssh)"),
         )
-        .arg(Arg::with_name("keys").multiple(true))
+        .arg(Arg::new("keys").num_args(1..).help("path to key files"))
         .get_matches();
 
     let command = matches
-        .value_of("add")
-        .map(|name| Command::Add {
+        .get_one::<String>("add")
+        .map(|name| UssCommand::Add {
             name: name.into(),
             force: false,
-            replace: !matches.is_present("no-replace"),
-            stdin: !matches.is_present("keys"),
+            replace: !matches.contains_id("no-replace"),
+            stdin: !matches.contains_id("keys"),
             keyfiles: matches
-                .values_of("keys")
+                .get_many::<String>("keys")
                 .map(|vals| vals.map(|s| s.into()).collect::<Vec<_>>())
                 .unwrap_or_default(),
         })
         .or_else(|| {
-            matches.value_of("add-force").map(|name| Command::Add {
-                name: name.into(),
-                force: true,
-                replace: !matches.is_present("no-replace"),
-                stdin: !matches.is_present("keys"),
-                keyfiles: matches
-                    .values_of("keys")
-                    .map(|vals| vals.map(|s| s.into()).collect::<Vec<_>>())
-                    .unwrap_or_default(),
-            })
+            matches
+                .get_one::<String>("add-force")
+                .map(|name| UssCommand::Add {
+                    name: name.into(),
+                    force: true,
+                    replace: !matches.contains_id("no-replace"),
+                    stdin: !matches.contains_id("keys"),
+                    keyfiles: matches
+                        .get_many::<String>("keys")
+                        .map(|vals| vals.map(|s| s.into()).collect::<Vec<_>>())
+                        .unwrap_or_default(),
+                })
         })
         .or_else(|| {
             matches
-                .value_of("delete")
-                .map(|name| Command::Delete { name: name.into() })
+                .get_one::<String>("delete")
+                .map(|name| UssCommand::Delete { name: name.into() })
         })
         .or_else(|| {
             matches
-                .value_of("disable")
-                .map(|name| Command::Disable { name: name.into() })
+                .get_one::<String>("disable")
+                .map(|name| UssCommand::Disable { name: name.into() })
         })
-        .unwrap_or(if matches.is_present("list") {
-            Command::List
+        .unwrap_or(if matches.contains_id("list") {
+            UssCommand::List
         } else {
-            Command::Sync
+            UssCommand::Sync
         });
 
-    let user = matches.value_of("user").map_or(default_user, String::from);
+    let user = matches
+        .get_one::<String>("user")
+        .map_or(default_user, String::from);
 
-    let ssh_dir = matches.value_of("ssh_dir").map(PathBuf::from);
+    let ssh_dir = matches.get_one::<String>("ssh_dir").map(PathBuf::from);
 
     Ok(Config {
         user,
