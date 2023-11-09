@@ -1,22 +1,37 @@
-name: Rust
+name: Run Rust CI
 
 on:
   push:
-    branches: [ flatcar-master ]
+    branches:
+      - flatcar-master
   pull_request:
-    branches: [ flatcar-master ]
-
-env:
-  CARGO_TERM_COLOR: always
+    branches:
+      - flatcar-master
 
 jobs:
-  build:
-
+  build-test:
+    name: Build and test update-ssh-keys
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: rustup component add rustfmt
+      - name: Rustfmt Check
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all --check
+      - name: Build update-ssh-keys
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --verbose
+      - name: Run unit tests of update-ssh-keys
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --verbose

@@ -352,7 +352,7 @@ impl AuthorizedKeys {
 
         // destroy the old authorized keys file and move the staging one to that
         // location
-        fs::rename(&stage_filename, &self.authorized_keys_file()).chain_err(|| {
+        fs::rename(&stage_filename, self.authorized_keys_file()).chain_err(|| {
             format!(
                 "failed to move '{:?}' to '{:?}'",
                 stage_filename,
@@ -381,7 +381,7 @@ impl AuthorizedKeys {
     /// files
     fn read_all_keys(dir: &Path) -> Result<HashMap<String, AuthorizedKeySet>> {
         let dir_contents =
-            fs::read_dir(&dir).chain_err(|| format!("failed to read from directory {:?}", dir))?;
+            fs::read_dir(dir).chain_err(|| format!("failed to read from directory {:?}", dir))?;
         let mut keys = HashMap::new();
         for entry in dir_contents {
             let entry =
