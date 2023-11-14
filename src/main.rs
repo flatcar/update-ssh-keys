@@ -196,11 +196,13 @@ fn config() -> Result<Config> {
         .arg(
             Arg::new("no-replace")
                 .short('n')
+                .num_args(0)
                 .help("When adding, don't replace an existing key with the given name."),
         )
         .arg(
             Arg::new("list")
                 .short('l')
+                .num_args(0)
                 .help("List the names and number of keys currently installed."),
         )
         .arg(
