@@ -24,6 +24,7 @@ extern crate uzers;
 
 extern crate update_ssh_keys;
 
+use clap::parser::ValueSource;
 use clap::{crate_version, Arg, Command};
 use std::fs::File;
 use std::path::PathBuf;
@@ -271,7 +272,11 @@ fn config() -> Result<Config> {
                 .map(|name| UssCommand::Disable { name: name.into() })
         })
         .unwrap_or(if matches.contains_id("list") {
-            UssCommand::List
+            if matches.value_source("list") == Some(ValueSource::CommandLine) {
+                UssCommand::List
+            } else {
+                UssCommand::Sync
+            }
         } else {
             UssCommand::Sync
         });
