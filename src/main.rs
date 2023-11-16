@@ -24,6 +24,7 @@ extern crate uzers;
 
 extern crate update_ssh_keys;
 
+use clap::parser::ValueSource;
 use clap::{crate_version, Arg, Command};
 use std::fs::File;
 use std::path::PathBuf;
@@ -196,11 +197,13 @@ fn config() -> Result<Config> {
         .arg(
             Arg::new("no-replace")
                 .short('n')
+                .num_args(0)
                 .help("When adding, don't replace an existing key with the given name."),
         )
         .arg(
             Arg::new("list")
                 .short('l')
+                .num_args(0)
                 .help("List the names and number of keys currently installed."),
         )
         .arg(
@@ -269,7 +272,11 @@ fn config() -> Result<Config> {
                 .map(|name| UssCommand::Disable { name: name.into() })
         })
         .unwrap_or(if matches.contains_id("list") {
-            UssCommand::List
+            if matches.value_source("list") == Some(ValueSource::CommandLine) {
+                UssCommand::List
+            } else {
+                UssCommand::Sync
+            }
         } else {
             UssCommand::Sync
         });
