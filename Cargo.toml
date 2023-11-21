@@ -7,6 +7,7 @@ repository = "https://github.com/coreos/update-ssh-keys"
 documentation = "https://docs.rs/update-ssh-keys"
 description = "A tool for managing authorized SSH keys"
 version = "0.4.2-alpha.0"
+edition = "2021"
 
 [dependencies]
 fs2 = "0.4"
@@ -15,6 +16,8 @@ error-chain = { version = "0.12", default-features = false }
 clap = { version = "4.4.6", features = ["cargo"] }
 uzers = "0.11.3"
 openssh-keys = "0.6.2"
+lazy_static = "1.4.0"
+tempfile = "3.8.0"
 
 [[bin]]
 name = "update-ssh-keys"
