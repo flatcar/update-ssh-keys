@@ -506,6 +506,11 @@ impl AuthorizedKeys {
         })
     }
 
+    /// close file lock to release resources for other processes
+    pub fn close(&self) -> Result<()> {
+        self.lock.unlock()
+    }
+
     /// get_keys gets the authorized keyset with the provided name
     pub fn get_keys(&self, name: &str) -> Option<&AuthorizedKeySet> {
         self.keys.get(name)
