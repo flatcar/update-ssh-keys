@@ -197,7 +197,7 @@ fn config() -> Result<Config> {
         .arg(
             Arg::new("no-replace")
                 .short('n')
-                .num_args(0)
+                .action(clap::ArgAction::SetTrue)
                 .help("When adding, don't replace an existing key with the given name."),
         )
         .arg(
@@ -240,7 +240,7 @@ fn config() -> Result<Config> {
         .map(|name| UssCommand::Add {
             name: name.into(),
             force: false,
-            replace: !matches.contains_id("no-replace"),
+            replace: !matches.get_flag("no-replace"),
             stdin: !matches.contains_id("keys"),
             keyfiles: matches
                 .get_many::<String>("keys")
@@ -253,7 +253,7 @@ fn config() -> Result<Config> {
                 .map(|name| UssCommand::Add {
                     name: name.into(),
                     force: true,
-                    replace: !matches.contains_id("no-replace"),
+                    replace: !matches.get_flag("no-replace"),
                     stdin: !matches.contains_id("keys"),
                     keyfiles: matches
                         .get_many::<String>("keys")
