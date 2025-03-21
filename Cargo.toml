@@ -13,7 +13,7 @@ edition = "2021"
 fs2 = "0.4"
 # Public dependencies, exposed through library API.
 error-chain = { version = "0.12", default-features = false }
-clap = { version = "4.4.6", features = ["cargo", "wrap_help"] }
+clap = { version = "4.4.6", features = ["cargo", "string", "wrap_help"] }
 uzers = "0.11.3"
 openssh-keys = "0.6.2"
 lazy_static = "1.4.0"
