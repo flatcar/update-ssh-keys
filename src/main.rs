@@ -25,7 +25,7 @@ extern crate uzers;
 extern crate update_ssh_keys;
 
 use clap::parser::ValueSource;
-use clap::{crate_version, Arg, Command};
+use clap::{crate_version, Arg, Command, ValueHint};
 use std::fs::File;
 use std::path::PathBuf;
 use update_ssh_keys::errors::*;
@@ -165,13 +165,9 @@ pub const USS_TEMPLATE: &str = "\
 {about-with-newline}";
 
 pub const ABOUT_TEXT: &str = "\
-This tool provides a consistent way for different systems to add ssh public
-keys to a given user account, usually the default current user.
-If -a, -A, -d, nor -D are provided then the authorized_keys file is simply
-regenerated using the existing keys.
+This tool provides a consistent way for different systems to add SSH public keys to a given user account, usually the default current user. If -a, -A, -d, nor -D are provided, then the authorized_keys file is simply regenerated using the existing keys.
 
-With the -a option keys may be provided as files on the command line. If no
-files are provided with the -a option the keys will be read from stdin.";
+When using the -a or -A options, keys must be provided as files on the command line, or if no files are given, via standard input.";
 
 fn config() -> Result<Config> {
     // get the default user by figuring out the current user; if the current user
@@ -190,49 +186,73 @@ fn config() -> Result<Config> {
         .version(crate_version!())
         .help_template(USS_TEMPLATE)
         .about(ABOUT_TEXT)
-        .arg(Arg::new("user").short('u').help(format!(
-            "Update the given user's authorized_keys file. [{}]",
-            default_user
-        )))
+        .arg(
+            Arg::new("user")
+                .short('u')
+                .long("user")
+                .value_name("USERNAME")
+                .value_hint(ValueHint::Username)
+                .default_value(default_user)
+                .help("Update the given user's authorized_keys file"),
+        )
         .arg(
             Arg::new("no-replace")
                 .short('n')
-                .num_args(0)
-                .help("When adding, don't replace an existing key with the given name."),
+                .long("no-replace")
+                .action(clap::ArgAction::SetTrue)
+                .help("When adding, don't replace an existing key with the given name"),
         )
         .arg(
             Arg::new("list")
                 .short('l')
+                .long("list")
                 .num_args(0)
-                .help("List the names and number of keys currently installed."),
+                .help("List the names and number of keys currently installed"),
         )
         .arg(
             Arg::new("add")
                 .short('a')
-                .help("Add the given keys, using the given name to identify them."),
+                .long("add")
+                .value_name("IDENTIFIER")
+                .help("Add keys from files or standard input under the given identifier"),
         )
         .arg(
             Arg::new("add-force")
                 .short('A')
-                .help("Add the given keys, even if it was disabled with '-D'."),
+                .long("add-force")
+                .value_name("IDENTIFIER")
+                .help("Add keys, even if the given identifier was disabled with '-D'"),
         )
         .arg(
             Arg::new("delete")
                 .short('d')
-                .help("Delete keys identified by the given name."),
+                .long("delete")
+                .value_name("IDENTIFIER")
+                .help("Delete keys stored under the given identifier"),
         )
         .arg(
             Arg::new("disable")
                 .short('D')
-                .help("Disable the given set from being added with '-a'."),
+                .long("disable")
+                .value_name("IDENTIFIER")
+                .help("Delete keys and prevent further addition with '-a'"),
         )
         .arg(
             Arg::new("ssh_dir")
                 .short('s')
                 .long("ssh-dir")
-                .help("location of the ssh configuration directory (defaults to ~/.ssh)"),
+                .value_name("DIR")
+                .value_hint(ValueHint::DirPath)
+                .default_value("~/.ssh")
+                .help("Location of the SSH configuration directory"),
         )
-        .arg(Arg::new("keys").num_args(1..).help("path to key files"))
+        .arg(
+            Arg::new("keys")
+                .value_name("KEYS")
+                .num_args(1..)
+                .value_hint(ValueHint::FilePath)
+                .help("Key file paths"),
+        )
         .get_matches();
 
     let command = matches
@@ -240,7 +260,7 @@ fn config() -> Result<Config> {
         .map(|name| UssCommand::Add {
             name: name.into(),
             force: false,
-            replace: !matches.contains_id("no-replace"),
+            replace: !matches.get_flag("no-replace"),
             stdin: !matches.contains_id("keys"),
             keyfiles: matches
                 .get_many::<String>("keys")
@@ -253,7 +273,7 @@ fn config() -> Result<Config> {
                 .map(|name| UssCommand::Add {
                     name: name.into(),
                     force: true,
-                    replace: !matches.contains_id("no-replace"),
+                    replace: !matches.get_flag("no-replace"),
                     stdin: !matches.contains_id("keys"),
                     keyfiles: matches
                         .get_many::<String>("keys")
@@ -281,11 +301,13 @@ fn config() -> Result<Config> {
             UssCommand::Sync
         });
 
-    let user = matches
-        .get_one::<String>("user")
-        .map_or(default_user, String::from);
+    let user = matches.get_one::<String>("user").unwrap().to_owned();
 
-    let ssh_dir = matches.get_one::<String>("ssh_dir").map(PathBuf::from);
+    let ssh_dir = if matches.value_source("ssh_dir") == Some(ValueSource::DefaultValue) {
+        None
+    } else {
+        matches.get_one::<String>("ssh_dir").map(PathBuf::from)
+    };
 
     Ok(Config {
         user,
