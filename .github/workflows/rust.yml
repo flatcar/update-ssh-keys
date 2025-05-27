@@ -3,10 +3,10 @@ name: Run Rust CI
 on:
   push:
     branches:
-      - flatcar-master
+      - main
   pull_request:
     branches:
-      - flatcar-master
+      - main
 
 jobs:
   build-test:
